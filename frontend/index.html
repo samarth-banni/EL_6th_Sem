@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Traffic Intelligence Engine</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="topbar">
+        <div>
+          <p class="eyebrow">6th Sem EL</p>
+          <h1>Traffic Intelligence Engine</h1>
+        </div>
+        <div class="status-strip">
+          <span id="apiStatus" class="pill neutral">API checking</span>
+          <span id="modelStatus" class="pill neutral">Models checking</span>
+          <span id="telegramStatus" class="pill neutral">Telegram checking</span>
+          <span id="liveStatus" class="pill neutral">Live idle</span>
+        </div>
+      </section>
+
+      <section class="dashboard">
+        <section class="video-panel">
+          <div class="video-stage">
+            <video id="trafficVideo" controls muted playsinline></video>
+            <canvas id="overlayCanvas"></canvas>
+            <div class="video-hud">
+              <strong id="liveCount">0 vehicles</strong>
+              <span id="liveWeather">Sunny</span>
+              <span id="liveRisk">Risk: --</span>
+            </div>
+          </div>
+
+          <div class="timeline-panel">
+            <div class="panel-head">
+              <h2>Live Traffic Stats</h2>
+              <strong id="panelRisk">Risk: --</strong>
+            </div>
+            <div class="live-stat-grid">
+              <div class="live-stat">
+                <span>Total Vehicles</span>
+                <strong id="panelTotalVehicles">0</strong>
+              </div>
+              <div class="live-stat">
+                <span>Chaos Index</span>
+                <strong id="panelChaosIndex">--</strong>
+              </div>
+              <div class="live-stat">
+                <span>Cars</span>
+                <strong id="panelCars">0</strong>
+              </div>
+              <div class="live-stat">
+                <span>Bikes</span>
+                <strong id="panelBikes">0</strong>
+              </div>
+              <div class="live-stat">
+                <span>Buses</span>
+                <strong id="panelBuses">0</strong>
+              </div>
+              <div class="live-stat">
+                <span>Trucks</span>
+                <strong id="panelTrucks">0</strong>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <aside class="control-panel">
+          <label class="file-picker">
+            <input id="videoInput" type="file" accept="video/*" />
+            <span id="fileLabel">Choose traffic video</span>
+          </label>
+
+          <div class="field-grid">
+            <div class="readonly-field">
+              <span>Location</span>
+              <strong id="locationText">Detecting...</strong>
+            </div>
+            <div class="readonly-field">
+              <span>Weather</span>
+              <strong id="weatherText">Detecting...</strong>
+            </div>
+            <label>
+              Road capacity
+              <input id="roadCapacity" type="number" min="1" step="1" value="100" />
+            </label>
+            <label>
+              Chaos alert
+              <input id="chaosThreshold" type="number" min="0" step="0.001" value="0.002" />
+            </label>
+            <label>
+              30-min volume alert
+              <input id="volumeThreshold" type="number" min="1" step="100" value="4500" />
+            </label>
+          </div>
+
+          <button id="startLiveBtn" class="primary-button">Start Live Analysis</button>
+          <button id="locationBtn" class="secondary-button">Refresh Location & Weather</button>
+          <button id="stopLiveBtn" class="secondary-button">Stop Analysis</button>
+          <button id="alertBtn" class="secondary-button">Send Telegram Alert</button>
+
+          <div class="risk-card">
+            <span>Live Chaos Index</span>
+            <strong id="chaosIndex">--</strong>
+            <div class="risk-stats">
+              <span>30-Min Level</span>
+              <strong id="predictionLevel">--</strong>
+              <span>TFT Confidence</span>
+              <strong id="tftConfidence">--</strong>
+              <span>Density</span>
+              <strong id="vehicleDensity">--</strong>
+            </div>
+            <p id="riskReason">Upload a video and start live analysis.</p>
+          </div>
+        </aside>
+      </section>
+
+      <section class="lower-grid">
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Detected Objects</h2>
+            <span id="lastAnalyzed">Waiting</span>
+          </div>
+          <div id="objectList" class="object-list"></div>
+        </section>
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Explainability</h2>
+            <span id="modelSource">--</span>
+          </div>
+          <div id="importanceList" class="importance"></div>
+        </section>
+      </section>
+
+      <p id="message" class="message">Choose a video, press play, then start live analysis.</p>
+    </main>
+
+    <canvas id="captureCanvas" hidden></canvas>
+    <script src="./script.js"></script>
+  </body>
+</html>
