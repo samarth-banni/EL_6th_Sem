@@ -3,6 +3,7 @@ services:
     name: traffic-intelligence-engine
     env: docker
     plan: free
+    healthCheckPath: /health
     envVars:
       - key: PYTHONUNBUFFERED
         value: "1"

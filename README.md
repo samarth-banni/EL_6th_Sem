@@ -30,9 +30,8 @@ pip install -r requirements.txt
 uvicorn api.main:app --host 0.0.0.0 --port 8000
 ```
 
-Place model artifacts in `models/`:
+The lightweight YOLO model is included at the repo root as `yolo12n.pt` so the Docker/Render deployment can load it without a runtime download. Keep larger or custom model artifacts in `models/`:
 
-- `models/yolo12n.pt`
 - `models/tft_weights.ckpt`
 
 If `yolo12n.pt` is missing, Ultralytics will attempt to resolve the model name when the detector loads.
@@ -94,5 +93,24 @@ Example frame request:
 
 ```bash
 docker build -t traffic-intelligence-engine .
-docker run -p 8000:8000 traffic-intelligence-engine
+docker run -p 10000:10000 traffic-intelligence-engine
+```
+
+## Render Deployment
+
+This repo includes a `render.yaml` blueprint for a Docker web service.
+
+1. Push the latest code to GitHub.
+2. In Render, choose **New > Blueprint** and select this repository.
+3. Render will build the Dockerfile and run:
+
+```bash
+uvicorn api.main:app --host 0.0.0.0 --port ${PORT:-10000}
+```
+
+The health check path is `/health`. After deploy, open:
+
+```text
+https://<your-render-service>.onrender.com/health
+https://<your-render-service>.onrender.com/app/index.html
 ```

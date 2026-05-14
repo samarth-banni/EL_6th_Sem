@@ -28,8 +28,10 @@ COPY --from=builder /opt/venv /opt/venv
 COPY api ./api
 COPY core ./core
 COPY data ./data
+COPY frontend ./frontend
 COPY models/.gitkeep ./models/.gitkeep
+COPY yolo12n.pt ./yolo12n.pt
 
-EXPOSE 8000
+EXPOSE 10000
 
-CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD uvicorn api.main:app --host 0.0.0.0 --port ${PORT:-10000}
