@@ -40,18 +40,32 @@ async function requestJson(url, options = {}) {
   return response.json();
 }
 
+function markApiOnline() {
+  $("apiStatus").textContent = "API online";
+  $("apiStatus").className = "pill ok";
+}
+
+function markApiOffline() {
+  $("apiStatus").textContent = "API offline";
+  $("apiStatus").className = "pill bad";
+}
+
+function renderModelStatus(health) {
+  $("modelStatus").textContent = `YOLO ${health.detector_loaded ? "loaded" : "ready"} | TFT ${
+    health.forecaster_loaded ? "on" : "fallback"
+  }`;
+  $("modelStatus").className = "pill ok";
+}
+
 async function refreshStatus() {
   try {
     const health = await requestJson("/health");
-    $("apiStatus").textContent = "API online";
-    $("apiStatus").className = "pill ok";
-    $("modelStatus").textContent = `YOLO ${health.detector_loaded ? "loaded" : "ready"} | TFT ${
-      health.forecaster_loaded ? "on" : "fallback"
-    }`;
-    $("modelStatus").className = "pill ok";
+    markApiOnline();
+    renderModelStatus(health);
   } catch {
-    $("apiStatus").textContent = "API offline";
-    $("apiStatus").className = "pill bad";
+    markApiOffline();
+    $("modelStatus").textContent = "Models waiting";
+    $("modelStatus").className = "pill neutral";
   }
 
   try {
@@ -209,6 +223,8 @@ async function analyzeCurrentFrame() {
         road_capacity: Number($("roadCapacity").value),
       }),
     });
+    markApiOnline();
+    renderModelStatus({ detector_loaded: true, forecaster_loaded: false });
     state.lastAnalysis = result;
     state.targetBoxes = result.boxes.slice().sort((a, b) => a.x1 - b.x1);
     renderLiveAnalysis(result);
@@ -427,6 +443,7 @@ video.addEventListener("ended", stopLiveAnalysis);
 window.addEventListener("resize", resizeOverlay);
 
 refreshStatus();
+setInterval(refreshStatus, 10000);
 resizeOverlay();
 animateOverlay();
 useSystemLocation();
