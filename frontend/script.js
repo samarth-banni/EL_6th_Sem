@@ -32,8 +32,10 @@ function formatNumber(value, digits = 1) {
   return Number(value).toFixed(digits);
 }
 
+const API_BASE = window.location.origin;
+
 async function requestJson(url, options = {}) {
-  const response = await fetch(url, options);
+  const response = await fetch(`${API_BASE}${url}`, options);
   if (!response.ok) {
     const text = await response.text();
     throw new Error(text || `Request failed: ${response.status}`);
@@ -223,10 +225,14 @@ function captureFrameBase64() {
   return capture.toDataURL("image/jpeg", 0.78).split(",")[1];
 }
 
-async function analyzeCurrentFrame() {
-  if (state.isAnalyzing || video.paused || video.ended) return;
+async function analyzeCurrentFrame({ force = false } = {}) {
+  if (state.isAnalyzing || video.ended) return;
+  if (!force && video.paused) return;
   const frameBase64 = captureFrameBase64();
-  if (!frameBase64) return;
+  if (!frameBase64) {
+    setMessage("Video frame is not ready yet. Press play once or wait for the video preview to load.");
+    return;
+  }
 
   state.isAnalyzing = true;
   setMessage("Analyzing current frame. First Render request can take longer while YOLO loads.");
@@ -244,6 +250,7 @@ async function analyzeCurrentFrame() {
     state.lastAnalysis = result;
     state.targetBoxes = result.boxes.slice().sort((a, b) => a.x1 - b.x1);
     renderLiveAnalysis(result);
+    evaluateRisk(false);
     $("lastAnalyzed").textContent = new Date().toLocaleTimeString();
   } catch (error) {
     setMessage(`Live frame analysis failed: ${error.message}`);
@@ -487,8 +494,12 @@ async function startLiveAnalysis() {
   state.riskTimer = setInterval(() => evaluateRisk(false), 12000);
   setLiveStatus("Live analyzing", "ok");
   setMessage("Live analysis started. Keep the tab open while YOLO warms up and detections appear.");
-  if (video.paused) video.play();
-  analyzeCurrentFrame();
+  analyzeCurrentFrame({ force: true });
+  if (video.paused) {
+    video.play().catch(() => {
+      setMessage("Current frame analyzed. Press play to continue continuous live analysis.");
+    });
+  }
   setTimeout(() => evaluateRisk(false), 2500);
 }
 
