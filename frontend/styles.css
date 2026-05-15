@@ -278,6 +278,12 @@ button {
   font-weight: 900;
 }
 
+button:disabled,
+.file-picker:has(input:disabled) {
+  cursor: wait;
+  opacity: 0.62;
+}
+
 .primary-button {
   color: #fff;
   background: var(--accent);

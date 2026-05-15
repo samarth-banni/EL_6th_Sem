@@ -4,6 +4,7 @@ const state = {
   riskTimer: null,
   animationFrame: null,
   isAnalyzing: false,
+  isVideoAnalyzing: false,
   lastAnalysis: null,
   forecast: null,
   risk: null,
@@ -81,6 +82,12 @@ async function refreshStatus() {
 function setLiveStatus(text, mode = "neutral") {
   $("liveStatus").textContent = text;
   $("liveStatus").className = `pill ${mode}`;
+}
+
+function setControlsDisabled(disabled) {
+  $("startLiveBtn").disabled = disabled;
+  $("analyzeVideoBtn").disabled = disabled;
+  $("videoInput").disabled = disabled;
 }
 
 function setLocationWeather(location, weather) {
@@ -214,6 +221,7 @@ async function analyzeCurrentFrame() {
   if (!frameBase64) return;
 
   state.isAnalyzing = true;
+  setMessage("Analyzing current frame. First Render request can take longer while YOLO loads.");
   try {
     const result = await requestJson("/stream/frame", {
       method: "POST",
@@ -234,6 +242,68 @@ async function analyzeCurrentFrame() {
   } finally {
     state.isAnalyzing = false;
   }
+}
+
+async function analyzeUploadedVideo() {
+  if (!state.videoFile) {
+    setMessage("Choose a video first.");
+    return;
+  }
+  if (state.isVideoAnalyzing) return;
+
+  state.isVideoAnalyzing = true;
+  setControlsDisabled(true);
+  setLiveStatus("Video analyzing", "ok");
+  setMessage("Uploading video for server analysis. This can take 1-2 minutes on the free Render instance.");
+
+  const form = new FormData();
+  form.append("file", state.videoFile);
+
+  try {
+    const params = new URLSearchParams({
+      sample_every_seconds: "3",
+      road_capacity: String(Number($("roadCapacity").value)),
+      max_frames: "12",
+    });
+    const result = await requestJson(`/stream/video?${params.toString()}`, {
+      method: "POST",
+      body: form,
+    });
+
+    markApiOnline();
+    renderModelStatus({ detector_loaded: true, forecaster_loaded: false });
+    renderVideoAnalysis(result);
+    setMessage(`Video analyzed: ${result.sampled_frames} frames sampled.`);
+  } catch (error) {
+    setMessage(`Video analysis failed: ${error.message}`);
+    setLiveStatus("Analysis failed", "bad");
+  } finally {
+    state.isVideoAnalyzing = false;
+    setControlsDisabled(false);
+  }
+}
+
+function renderVideoAnalysis(result) {
+  const frames = result.frames || [];
+  const bestFrame = frames
+    .slice()
+    .sort((a, b) => b.analysis.total_vehicles - a.analysis.total_vehicles)[0];
+
+  if (!bestFrame) {
+    renderLiveAnalysis({
+      total_vehicles: 0,
+      chaos_index: 0,
+      counts: { car: 0, motorcycle: 0, bus: 0, truck: 0 },
+      boxes: [],
+    });
+    return;
+  }
+
+  state.lastAnalysis = bestFrame.analysis;
+  state.targetBoxes = bestFrame.analysis.boxes.slice().sort((a, b) => a.x1 - b.x1);
+  renderLiveAnalysis(bestFrame.analysis);
+  $("lastAnalyzed").textContent = `${formatNumber(bestFrame.timestamp_seconds, 1)}s`;
+  evaluateRisk(false);
 }
 
 function renderLiveAnalysis(result) {
@@ -396,7 +466,7 @@ function startLiveAnalysis() {
   state.liveTimer = setInterval(analyzeCurrentFrame, interval);
   state.riskTimer = setInterval(() => evaluateRisk(false), 12000);
   setLiveStatus("Live analyzing", "ok");
-  setMessage("Live analysis started. Smooth boxes are drawn on the video.");
+  setMessage("Live analysis started. Keep the tab open while YOLO warms up and detections appear.");
   if (video.paused) video.play();
   analyzeCurrentFrame();
   setTimeout(() => evaluateRisk(false), 2500);
@@ -433,6 +503,7 @@ $("videoInput").addEventListener("change", (event) => {
 });
 
 $("startLiveBtn").addEventListener("click", startLiveAnalysis);
+$("analyzeVideoBtn").addEventListener("click", analyzeUploadedVideo);
 $("locationBtn").addEventListener("click", useSystemLocation);
 $("stopLiveBtn").addEventListener("click", stopLiveAnalysis);
 $("alertBtn").addEventListener("click", () => evaluateRisk(true));
