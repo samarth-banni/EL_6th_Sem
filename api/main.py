@@ -47,12 +47,6 @@ if frontend_dir.exists():
 @app.on_event("startup")
 async def startup() -> None:
     try:
-        detector.load()
-    except Exception:
-        # The service should still boot in environments where weights are mounted later.
-        pass
-
-    try:
         forecaster.load()
     except Exception:
         pass

@@ -6,8 +6,6 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-import torch
-from pytorch_forecasting import TemporalFusionTransformer
 
 
 DEFAULT_IMPORTANCE = {
@@ -27,7 +25,7 @@ class TrafficForecaster:
 
     def __init__(self, checkpoint_path: str | Path = "models/tft_weights.ckpt") -> None:
         self.checkpoint_path = Path(checkpoint_path)
-        self.model: TemporalFusionTransformer | None = None
+        self.model: object | None = None
 
     @property
     def is_loaded(self) -> bool:
@@ -35,6 +33,8 @@ class TrafficForecaster:
 
     def load(self) -> None:
         if self.model is None and self.checkpoint_path.exists():
+            from pytorch_forecasting import TemporalFusionTransformer
+
             self.model = TemporalFusionTransformer.load_from_checkpoint(str(self.checkpoint_path))
             self.model.eval()
 
@@ -44,6 +44,8 @@ class TrafficForecaster:
             return self._fallback_prediction(recent_observations or [])
 
         frame = self._build_inference_frame(recent_observations or [])
+        import torch
+
         with torch.no_grad():
             raw_prediction = self.model.predict(frame, mode="raw", return_x=True)
 

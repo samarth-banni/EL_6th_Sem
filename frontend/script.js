@@ -45,10 +45,10 @@ async function refreshStatus() {
     const health = await requestJson("/health");
     $("apiStatus").textContent = "API online";
     $("apiStatus").className = "pill ok";
-    $("modelStatus").textContent = `YOLO ${health.detector_loaded ? "on" : "off"} | TFT ${
-      health.forecaster_loaded ? "on" : "off"
+    $("modelStatus").textContent = `YOLO ${health.detector_loaded ? "loaded" : "ready"} | TFT ${
+      health.forecaster_loaded ? "on" : "fallback"
     }`;
-    $("modelStatus").className = health.detector_loaded && health.forecaster_loaded ? "pill ok" : "pill bad";
+    $("modelStatus").className = "pill ok";
   } catch {
     $("apiStatus").textContent = "API offline";
     $("apiStatus").className = "pill bad";

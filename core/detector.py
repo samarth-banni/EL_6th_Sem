@@ -9,7 +9,6 @@ from pathlib import Path
 
 import cv2
 import numpy as np
-from ultralytics import YOLO
 
 
 VEHICLE_CLASSES = {
@@ -46,7 +45,7 @@ class TrafficDetector:
         self.road_capacity = road_capacity
         self.aggregation_window_seconds = aggregation_window_seconds
         self.confidence_threshold = confidence_threshold
-        self.model: YOLO | None = None
+        self.model: object | None = None
         self.buffer: deque[dict[str, object]] = deque()
 
     @property
@@ -55,6 +54,8 @@ class TrafficDetector:
 
     def load(self) -> None:
         if self.model is None:
+            from ultralytics import YOLO
+
             load_target = str(self.model_path if self.model_path.exists() else "yolo12n.pt")
             self.model = YOLO(load_target)
 
