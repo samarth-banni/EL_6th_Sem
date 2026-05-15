@@ -79,6 +79,14 @@ async function refreshStatus() {
   }
 }
 
+async function warmupDetector() {
+  setLiveStatus("Warming YOLO", "ok");
+  setMessage("Warming YOLO model on Render. Keep this tab open.");
+  const health = await requestJson("/models/warmup", { method: "POST" });
+  markApiOnline();
+  renderModelStatus(health);
+}
+
 function setLiveStatus(text, mode = "neutral") {
   $("liveStatus").textContent = text;
   $("liveStatus").className = `pill ${mode}`;
@@ -260,6 +268,7 @@ async function analyzeUploadedVideo() {
   form.append("file", state.videoFile);
 
   try {
+    await warmupDetector();
     const params = new URLSearchParams({
       sample_every_seconds: "3",
       road_capacity: String(Number($("roadCapacity").value)),
@@ -454,12 +463,23 @@ function titleCase(value) {
   return text.slice(0, 1).toUpperCase() + text.slice(1);
 }
 
-function startLiveAnalysis() {
+async function startLiveAnalysis() {
   if (!state.videoFile) {
     setMessage("Choose a video first.");
     return;
   }
   if (state.liveTimer) return;
+
+  setControlsDisabled(true);
+  try {
+    await warmupDetector();
+  } catch (error) {
+    setMessage(`Model warmup failed: ${error.message}`);
+    setLiveStatus("Warmup failed", "bad");
+    setControlsDisabled(false);
+    return;
+  }
+  setControlsDisabled(false);
 
   const interval = 1000;
   state.alertSent = false;

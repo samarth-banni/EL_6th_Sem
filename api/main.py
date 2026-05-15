@@ -61,6 +61,24 @@ async def health() -> HealthResponse:
     )
 
 
+@app.post("/models/warmup")
+async def warmup_models() -> dict[str, bool]:
+    try:
+        detector.load()
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"Detector warmup failed: {exc}") from exc
+
+    try:
+        forecaster.load()
+    except Exception:
+        pass
+
+    return {
+        "detector_loaded": detector.is_loaded,
+        "forecaster_loaded": forecaster.is_loaded,
+    }
+
+
 @app.get("/", include_in_schema=False)
 async def root() -> RedirectResponse:
     return RedirectResponse(url="/app/index.html")
